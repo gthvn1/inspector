@@ -2,6 +2,11 @@ type command = { description : string; run : State.t -> State.t }
 
 module Cmd = Map.Make (String)
 
+let show_command state =
+  let open State in
+  Printf.printf "[%d]: %s\n" (cursor state) (show_line state);
+  state
+
 let commands =
   [
     ( "next",
@@ -9,13 +14,7 @@ let commands =
     ( "prev",
       { description = "Move cursor to the previous line"; run = State.prev } );
     ( "show",
-      {
-        description = "Display the current log line";
-        run =
-          (fun s ->
-            Printf.printf "[%d]: %s\n" (State.cursor s) (State.show_line s);
-            s);
-      } );
+      { description = "Display the current log line"; run = show_command } );
   ]
   |> List.to_seq |> Cmd.of_seq
 
@@ -24,6 +23,7 @@ let help () =
   Cmd.iter
     (fun cmd args -> Printf.printf "  %-11s %s\n" cmd args.description)
     commands;
+  print_endline "  help        Show this help";
   print_endline "  exit, quit  Exit the inspector"
 
 let rec loop state =
@@ -34,6 +34,9 @@ let rec loop state =
     match cmd with
     | "" -> loop state
     | "exit" | "quit" -> print_endline "bye"
+    | "help" ->
+        help ();
+        loop state
     | _ -> (
         match Cmd.find_opt cmd commands with
         | Some c -> loop (c.run state)
