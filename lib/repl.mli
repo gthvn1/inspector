@@ -19,3 +19,6 @@ val loop : State.t -> unit
     the loop.
 
     The function runs until the user exits the program. *)
+
+val help : unit -> unit
+(** [help] print all commands available in the repl. *)

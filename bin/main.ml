@@ -6,5 +6,6 @@ let () =
 
   let s = State.create Sys.argv.(1) in
   Printf.printf "Loaded %d lines\n" (State.size s);
+  Repl.help ();
 
   Repl.loop s
