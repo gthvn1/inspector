@@ -1,6 +1,10 @@
+type ui_state = { last_cmd : string option; truncated : bool }
+(** Keep state related to the UI *)
+
 type app_state = { domain : State.t; ui : ui_state }
-and ui_state = { last_cmd : command option; truncated : bool }
-and command = { description : string; run : app_state -> app_state }
+(** Group state of the UI but also of the domain *)
+
+type command = { description : string; run : app_state -> app_state }
 
 module Cmd = Map.Make (String)
 
@@ -83,6 +87,11 @@ let render state =
 
   print_endline "\n--------------------------------------------"
 
+(* Helper function that executes a command and set it as the last command in UI state *)
+let exec_command cmd_name cmd app =
+  let app = cmd.run app in
+  { app with ui = { app.ui with last_cmd = Some cmd_name } }
+
 let rec loop state =
   (* rendering part *)
   render state;
@@ -90,11 +99,11 @@ let rec loop state =
   flush stdout;
 
   try
-    let user_input = read_line () |> String.lowercase_ascii in
+    let input = read_line () |> String.lowercase_ascii in
 
     (* Determine which command to execute *)
-    let cmd =
-      match user_input with
+    let cmd_name =
+      match input with
       | "" -> state.ui.last_cmd
       | "e" | "exit" | "q" | "quit" ->
           print_endline "Bye";
@@ -104,15 +113,15 @@ let rec loop state =
           (* wait that user press enter *)
           ignore (read_line ());
           None
-      | c -> Cmd.find_opt c commands
+      | str -> Some str
     in
 
-    match cmd with
+    match cmd_name with
     | None -> loop state
-    | Some c ->
-        let new_state = c.run state in
-        let new_ui = { new_state.ui with last_cmd = Some c } in
-        loop { new_state with ui = new_ui }
+    | Some cmd_str -> (
+        match Cmd.find_opt cmd_str commands with
+        | None -> loop state
+        | Some c -> exec_command cmd_str c state |> loop)
   with End_of_file -> print_endline "bye"
 
 let start state =
