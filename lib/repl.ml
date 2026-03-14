@@ -2,6 +2,16 @@ type command = { description : string; run : State.t -> State.t }
 
 module Cmd = Map.Make (String)
 
+module Style = struct
+  let bold = "\027[1m"
+  let reverse = "\027[7m"
+  let reset = "\027[0m"
+  let bold_text s = bold ^ s ^ reset
+  let reverse_text s = reverse ^ s ^ reset
+end
+
+let clear () = print_string "\027[2J\027[H"
+
 let truncate_log max_len s =
   if String.length s > max_len then String.sub s 0 max_len ^ "..." else s
 
@@ -19,8 +29,10 @@ let show_logs state =
   let stop = max stop height in
 
   for i = start to stop do
-    let prefix = if i = cursor state then "->" else "  " in
-    Printf.printf "%s[%d]: %s\n" prefix i (truncate_log 90 (show_line i state))
+    let line =
+      Printf.sprintf "[%d]: %s" (i + 1) (truncate_log 90 (show_line i state))
+    in
+    print_endline @@ if i = cursor state then Style.reverse_text line else line
   done
 
 let commands =
@@ -38,8 +50,6 @@ let help () =
   print_endline "  [h]elp          Show this help";
   print_endline "  [e]xit, [q]uit  Exit the inspector";
   print_endline "\nPress Enter"
-
-let clear () = print_string "\027[2J\027[H"
 
 let render state =
   clear ();
