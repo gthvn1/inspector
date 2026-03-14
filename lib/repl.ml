@@ -5,14 +5,6 @@ type command = { description : string; run : app_state -> app_state }
 
 module Cmd = Map.Make (String)
 
-module Style = struct
-  let bold = "\027[1m"
-  let reverse = "\027[7m"
-  let reset = "\027[0m"
-  let bold_text s = bold ^ s ^ reset
-  let reverse_text s = reverse ^ s ^ reset
-end
-
 let clear () = print_string "\027[2J\027[H"
 
 let truncate_log max_len s =
