@@ -45,28 +45,37 @@ let render state =
 
   print_endline "\n--------------------------------------------"
 
-let rec loop state =
+let rec loop state last_cmd =
+  (* rendering part *)
   render state;
   print_string "inspector> ";
   flush stdout;
+
   try
-    let cmd = read_line () |> String.lowercase_ascii in
+    let user_input = read_line () |> String.lowercase_ascii in
+
+    (* Determine which command to execute *)
+    let cmd =
+      match user_input with
+      | "" -> last_cmd
+      | "e" | "exit" | "q" | "quit" ->
+          print_endline "Bye";
+          exit 0
+      | "h" | "help" ->
+          help ();
+          (* wait that user press enter *)
+          ignore (read_line ());
+          None
+      | c -> Cmd.find_opt c commands
+    in
+
     match cmd with
-    | "" -> loop state
-    | "e" | "exit" | "q" | "quit" -> print_endline "bye"
-    | "h" | "help" ->
-        help ();
-        ignore (read_line ());
-        (* wait that user press enter *)
-        loop state
-    | _ -> (
-        match Cmd.find_opt cmd commands with
-        | Some c -> loop (c.run state)
-        | None ->
-            Printf.printf "Unknown command: %s\n" cmd;
-            loop state)
+    | None -> loop state last_cmd
+    | Some c ->
+        let new_state = c.run state in
+        loop new_state (Some c)
   with End_of_file -> print_endline "bye"
 
 let start state =
   help ();
-  loop state
+  loop state None
