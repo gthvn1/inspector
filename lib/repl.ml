@@ -45,7 +45,13 @@ let commands =
           (fun app ->
             let line = D.show_current_line app.domain in
             let refs =
-              Inspect.find_opaqueref line |> List.sort_uniq String.compare
+              Inspect.find_opaqueref line
+              |> List.sort_uniq String.compare
+              |> List.map (fun ref ->
+                  Printf.eprintf "DEBUG: looking for ref %s\n%!" ref;
+                  Xapidb.get_ref ~ref (D.get_db app.domain)
+                  |> List.map Xapidb.elt_to_string)
+              |> List.flatten
             in
             { app with ui = Ui.set_objects refs app.ui })
       } )

@@ -19,3 +19,4 @@ let next s =
   if s.cursor < size s - 1 then { s with cursor = s.cursor + 1 } else s
 
 let prev s = if s.cursor > 0 then { s with cursor = s.cursor - 1 } else s
+let get_db s = s.db
