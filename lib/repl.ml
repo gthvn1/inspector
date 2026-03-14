@@ -34,7 +34,10 @@ let show_logs app =
   done
 
 (* TODO: control the size of printed list of objects *)
-let show_objects app = List.iter print_endline (Ui.get_objects app.ui)
+let show_objects app =
+  Ui.get_objects app.ui
+  |> List.sort_uniq String.compare
+  |> List.iter print_endline
 
 let commands =
   [
