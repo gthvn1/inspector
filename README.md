@@ -85,17 +85,19 @@ bin/
   main.ml
 
 lib/
-  model.ml
-  ui.ml
-  repl.ml
   inspect.ml
+  model.ml
+  repl.ml
+  style.ml
+  ui.ml
   xapidb.ml
 ```
 
-- **model**: domain state (logs, cursor, database)
-- **ui**: UI state (truncation, inspector panel)
-- **repl**: command loop and rendering
 - **inspect**: identifier detection and highlighting
+- **model**: domain state (logs, cursor, database)
+- **repl**: command loop and rendering
+- **style**: Ansi escape sequence to manage output 
+- **ui**: UI state (truncation, inspector panel)
 - **xapidb**: parsing the XAPI database
 
 ---
