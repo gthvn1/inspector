@@ -10,7 +10,7 @@ val create : logfile:string -> dbfile:string -> t
 
 val show_line : int -> t -> string
 (** [show_line n s] returns the line at position [n]. If [n] is outside the
-    range of logs then questions marks are returned. *)
+    range of logs then question marks are returned. *)
 
 val show_current_line : t -> string
 (** [show_current_line s] returns the line currently pointed to by the cursor.

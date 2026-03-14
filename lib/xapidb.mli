@@ -2,7 +2,7 @@ type e (* an element of the database *)
 type t (* the database *)
 
 val from_channel : in_channel -> t
-(** [from_file ic] reads XML from the input channel and build a relational
+(** [from_channel ic] reads XML from the input channel and builds a relational
     database *)
 
 val size : t -> int
