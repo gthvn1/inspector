@@ -2,10 +2,19 @@ type command = { description : string; run : State.t -> State.t }
 
 module Cmd = Map.Make (String)
 
-let show_command state =
+let show_logs state =
   let open State in
-  Printf.printf "[%d]: %s\n" (cursor state) (show_line state);
-  state
+  let height = 10 in
+  let middle = height / 2 in
+
+  (* We want the cursor in the middle of the log window *)
+  let start = max 0 (cursor state - middle) in
+  let stop = min (size state) (cursor state + middle) in
+
+  for i = start to stop do
+    let prefix = if i = cursor state then "> " else "  " in
+    Printf.printf "%s[%d]: %s\n" prefix i (show_line i state)
+  done
 
 let commands =
   [
@@ -13,8 +22,6 @@ let commands =
       { description = "Move cursor to the next log line"; run = State.next } );
     ( "prev",
       { description = "Move cursor to the previous line"; run = State.prev } );
-    ( "show",
-      { description = "Display the current log line"; run = show_command } );
   ]
   |> List.to_seq |> Cmd.of_seq
 
@@ -24,11 +31,24 @@ let help () =
     (fun cmd args -> Printf.printf "  %-11s %s\n" cmd args.description)
     commands;
   print_endline "  help        Show this help";
-  print_endline "  exit, quit  Exit the inspector"
+  print_endline "  exit, quit  Exit the inspector";
+  print_endline "\nPress Enter"
 
 let clear () = print_string "\027[2J\027[H"
 
+let render state =
+  clear ();
+  Printf.printf "Loaded %d lines from logs | DB entries: %d\n"
+    (State.size state) (State.dbsize state);
+
+  print_endline "--------------------------------------------\n\n";
+
+  show_logs state;
+
+  print_endline "\n--------------------------------------------"
+
 let rec loop state =
+  render state;
   print_string "inspector> ";
   flush stdout;
   try
@@ -38,6 +58,8 @@ let rec loop state =
     | "exit" | "quit" -> print_endline "bye"
     | "help" ->
         help ();
+        ignore (read_line ());
+        (* wait that user press enter *)
         loop state
     | _ -> (
         match Cmd.find_opt cmd commands with
@@ -48,8 +70,5 @@ let rec loop state =
   with End_of_file -> print_endline "bye"
 
 let start state =
-  clear ();
-  Printf.printf "Loaded %d lines from logs\n" (State.size state);
-  Printf.printf "Found %d entries in the DB\n" (State.dbsize state);
   help ();
   loop state
