@@ -5,8 +5,8 @@ type t
     active line. *)
 
 val create : logfile:string -> dbfile:string -> t
-(** [create file] loads the log file into memory and initializes the cursor at
-    the first line. *)
+(** [create logfile dbfile] loads the log file [logfile] and the database file
+    [dbfile] into memory and initializes the cursor at the first line. *)
 
 val show_line : t -> string
 (** [show_line s] returns the line currently pointed to by the cursor. *)

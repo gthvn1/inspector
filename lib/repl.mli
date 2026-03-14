@@ -10,8 +10,8 @@
     end-of-file condition is encountered on standard input (for example when
     pressing Ctrl-D). *)
 
-val loop : State.t -> unit
-(** [loop state] starts the interactive command loop.
+val start : State.t -> unit
+(** [start state] starts the interactive command loop.
 
     The given [state] represents the current navigation state of the loaded log
     file. Commands executed by the user may derive new states (for example via

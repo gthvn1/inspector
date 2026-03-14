@@ -26,6 +26,8 @@ let help () =
   print_endline "  help        Show this help";
   print_endline "  exit, quit  Exit the inspector"
 
+let clear () = print_string "\027[2J\027[H"
+
 let rec loop state =
   print_string "inspector> ";
   flush stdout;
@@ -44,3 +46,10 @@ let rec loop state =
             Printf.printf "Unknown command: %s\n" cmd;
             loop state)
   with End_of_file -> print_endline "bye"
+
+let start state =
+  clear ();
+  Printf.printf "Loaded %d lines from logs\n" (State.size state);
+  Printf.printf "Found %d entries in the DB\n" (State.dbsize state);
+  help ();
+  loop state
