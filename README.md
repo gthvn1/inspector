@@ -97,7 +97,7 @@ lib/
 - **inspect**: identifier detection and highlighting
 - **model**: domain state (logs, cursor, database)
 - **repl**: command loop and rendering
-- **style**: Ansi escape sequence to manage output 
+- **style**: Ansi escape sequence to manage output
 - **ui**: UI state (truncation, inspector panel)
 - **xapidb**: parsing the XAPI database
 
