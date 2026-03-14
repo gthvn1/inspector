@@ -54,6 +54,7 @@ inspector>
 
 | Command | Description |
 |-------|-------------|
+| `i` | Update objects with the OpaqueRef found on the current line, if any |
 | `n` | Move cursor to next log line |
 | `p` | Move cursor to previous log line |
 | `t` | Toggle truncated log display |
