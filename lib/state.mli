@@ -4,7 +4,7 @@ type t
     A [t] represents a loaded log file and a cursor pointing to the currently
     active line. *)
 
-val create : string -> t
+val create : logfile:string -> dbfile:string -> t
 (** [create file] loads the log file into memory and initializes the cursor at
     the first line. *)
 
@@ -22,3 +22,6 @@ val cursor : t -> int
 
 val size : t -> int
 (** Number of lines in the log. *)
+
+val dbsize : t -> int
+(** Number of entries in the db. *)

@@ -1,2 +1,3 @@
 (library
- (name inspector))
+ (name inspector)
+ (libraries xmlm))

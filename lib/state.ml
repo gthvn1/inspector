@@ -1,14 +1,16 @@
-type t = { lines : string array; cursor : int }
+type t = { lines : string array; cursor : int; db : Xapidb.t }
 (** Invariant: cursor >= 0 cursor < Array.length lines *)
 
 let size s = Array.length s.lines
+let dbsize s = Xapidb.size s.db
 let cursor s = s.cursor
 
-let create (fname : string) : t =
+let create ~(logfile : string) ~(dbfile : string) : t =
   let lines =
-    In_channel.with_open_text fname In_channel.input_lines |> Array.of_list
+    In_channel.with_open_text logfile In_channel.input_lines |> Array.of_list
   in
-  { lines; cursor = 0 }
+  let db = In_channel.with_open_text dbfile Xapidb.from_channel in
+  { lines; cursor = 0; db }
 
 let show_line s : string = s.lines.(s.cursor)
 
