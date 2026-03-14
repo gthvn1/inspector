@@ -18,20 +18,18 @@ let show_logs state =
 
 let commands =
   [
-    ( "next",
-      { description = "Move cursor to the next log line"; run = State.next } );
-    ( "prev",
-      { description = "Move cursor to the previous line"; run = State.prev } );
+    ("n", { description = "Move cursor to the next log line"; run = State.next });
+    ("p", { description = "Move cursor to the previous line"; run = State.prev });
   ]
   |> List.to_seq |> Cmd.of_seq
 
 let help () =
   Printf.printf "Available commands:\n";
   Cmd.iter
-    (fun cmd args -> Printf.printf "  %-11s %s\n" cmd args.description)
+    (fun cmd args -> Printf.printf "  %-15s %s\n" cmd args.description)
     commands;
-  print_endline "  help        Show this help";
-  print_endline "  exit, quit  Exit the inspector";
+  print_endline "  [h]elp          Show this help";
+  print_endline "  [e]xit, [q]uit  Exit the inspector";
   print_endline "\nPress Enter"
 
 let clear () = print_string "\027[2J\027[H"
@@ -55,8 +53,8 @@ let rec loop state =
     let cmd = read_line () |> String.lowercase_ascii in
     match cmd with
     | "" -> loop state
-    | "exit" | "quit" -> print_endline "bye"
-    | "help" ->
+    | "e" | "exit" | "q" | "quit" -> print_endline "bye"
+    | "h" | "help" ->
         help ();
         ignore (read_line ());
         (* wait that user press enter *)
