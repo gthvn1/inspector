@@ -1,7 +1,4 @@
-type ui_state = { last_cmd : string option; truncated : bool }
-(** Keep state related to the UI *)
-
-type app_state = { domain : Domain.t; ui : ui_state }
+type app_state = { domain : Domain.t; ui : Ui.t }
 (** Group state of the UI but also of the domain *)
 
 type command = { description : string; run : app_state -> app_state }
@@ -36,7 +33,7 @@ let show_logs app =
 
   for i = start to stop do
     let log = show_line i app.domain in
-    let log = if app.ui.truncated then truncate_log 90 log else log in
+    let log = if Ui.is_truncated app.ui then truncate_log 90 log else log in
     let line = Printf.sprintf "[%d]: %s" (i + 1) log in
     print_endline
     @@ if i = cursor app.domain then Style.reverse_text line else line
@@ -50,20 +47,21 @@ let commands =
       {
         description =
           "Switch truncated mode (lines are truncated to 90 characters)";
-        run =
-          (fun s ->
-            let new_ui = { s.ui with truncated = not s.ui.truncated } in
-            { s with ui = new_ui });
+        run = (fun state -> { state with ui = Ui.switch_trunc state.ui });
       } );
     ( "n",
       {
         description = "Move cursor to the next log line";
-        run = (fun s : app_state -> { s with domain = Domain.next s.domain });
+        run =
+          (fun state : app_state ->
+            { state with domain = Domain.next state.domain });
       } );
     ( "p",
       {
         description = "Move cursor to the previous line";
-        run = (fun s : app_state -> { s with domain = Domain.prev s.domain });
+        run =
+          (fun state : app_state ->
+            { state with domain = Domain.prev state.domain });
       } );
   ]
   |> List.to_seq |> Cmd.of_seq
@@ -92,7 +90,7 @@ let render state =
 (* Helper function that executes a command and set it as the last command in UI state *)
 let exec_command cmd_name cmd app =
   let app = cmd.run app in
-  { app with ui = { app.ui with last_cmd = Some cmd_name } }
+  { app with ui = Ui.set_last_cmd cmd_name app.ui }
 
 let rec loop state =
   (* rendering part *)
@@ -106,7 +104,7 @@ let rec loop state =
     (* Determine which command to execute *)
     let cmd_name =
       match input with
-      | "" -> state.ui.last_cmd
+      | "" -> Ui.get_last_cmd_opt state.ui
       | "e" | "exit" | "q" | "quit" ->
           print_endline "Bye";
           exit 0
@@ -126,7 +124,4 @@ let rec loop state =
         | Some c -> exec_command cmd_str c state |> loop)
   with End_of_file -> print_endline "bye"
 
-let start state =
-  help ();
-  let ui_state = { last_cmd = None; truncated = true } in
-  loop { domain = state; ui = ui_state }
+let start domain = loop { domain; ui = Ui.create () }
