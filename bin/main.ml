@@ -4,8 +4,8 @@ let dbfile = ref ""
 
 let speclist =
   [
-    ("-log", Arg.Set_string logfile, "Set log filename");
-    ("-db", Arg.Set_string dbfile, "Set XAPI db file");
+    ("-log", Arg.Set_string logfile, "Set log filename")
+  ; ("-db", Arg.Set_string dbfile, "Set XAPI db file")
   ]
 
 let ignore_anon arg = print_endline @@ arg ^ " is ignored"

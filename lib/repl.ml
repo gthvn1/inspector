@@ -5,8 +5,6 @@ type command = { description : string; run : app_state -> app_state }
 
 module Cmd = Map.Make (String)
 
-let clear () = print_string "\027[2J\027[H"
-
 let truncate_log max_len s =
   if String.length s > max_len then String.sub s 0 max_len ^ "..." else s
 
@@ -39,26 +37,26 @@ let show_objects app = print_endline "TODO"
 
 let commands =
   [
-    ( "t",
-      {
+    ( "t"
+    , {
         description =
-          "Switch truncated mode (lines are truncated to 90 characters)";
-        run = (fun state -> { state with ui = Ui.switch_trunc state.ui });
-      } );
-    ( "n",
-      {
-        description = "Move cursor to the next log line";
-        run =
+          "Switch truncated mode (lines are truncated to 90 characters)"
+      ; run = (fun state -> { state with ui = Ui.switch_trunc state.ui })
+      } )
+  ; ( "n"
+    , {
+        description = "Move cursor to the next log line"
+      ; run =
           (fun state : app_state ->
-            { state with domain = Domain.next state.domain });
-      } );
-    ( "p",
-      {
-        description = "Move cursor to the previous line";
-        run =
+            { state with domain = Domain.next state.domain })
+      } )
+  ; ( "p"
+    , {
+        description = "Move cursor to the previous line"
+      ; run =
           (fun state : app_state ->
-            { state with domain = Domain.prev state.domain });
-      } );
+            { state with domain = Domain.prev state.domain })
+      } )
   ]
   |> List.to_seq |> Cmd.of_seq
 
@@ -72,7 +70,7 @@ let help () =
   print_endline "\nPress Enter"
 
 let render state =
-  clear ();
+  Style.clear ();
   Printf.printf "Loaded %d lines from logs | DB entries: %d\n"
     (Domain.size state.domain)
     (Domain.dbsize state.domain);
