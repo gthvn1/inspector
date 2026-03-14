@@ -1,7 +1,7 @@
 type ui_state = { last_cmd : string option; truncated : bool }
 (** Keep state related to the UI *)
 
-type app_state = { domain : State.t; ui : ui_state }
+type app_state = { domain : Domain.t; ui : ui_state }
 (** Group state of the UI but also of the domain *)
 
 type command = { description : string; run : app_state -> app_state }
@@ -22,7 +22,7 @@ let truncate_log max_len s =
   if String.length s > max_len then String.sub s 0 max_len ^ "..." else s
 
 let show_logs app =
-  let open State in
+  let open Domain in
   let height = 10 in
   let middle = height / 2 in
   let max_size = size app.domain - 1 in
@@ -58,12 +58,12 @@ let commands =
     ( "n",
       {
         description = "Move cursor to the next log line";
-        run = (fun s : app_state -> { s with domain = State.next s.domain });
+        run = (fun s : app_state -> { s with domain = Domain.next s.domain });
       } );
     ( "p",
       {
         description = "Move cursor to the previous line";
-        run = (fun s : app_state -> { s with domain = State.prev s.domain });
+        run = (fun s : app_state -> { s with domain = Domain.prev s.domain });
       } );
   ]
   |> List.to_seq |> Cmd.of_seq
@@ -80,8 +80,8 @@ let help () =
 let render state =
   clear ();
   Printf.printf "Loaded %d lines from logs | DB entries: %d\n"
-    (State.size state.domain)
-    (State.dbsize state.domain);
+    (Domain.size state.domain)
+    (Domain.dbsize state.domain);
 
   print_endline "\n---[logs]-----------------------------------";
   show_logs state;

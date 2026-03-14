@@ -21,5 +21,4 @@ let () =
     exit 1);
 
   let open Inspector in
-  let s = State.create ~logfile:!logfile ~dbfile:!dbfile in
-  Repl.start s
+  Domain.create ~logfile:!logfile ~dbfile:!dbfile |> Repl.start

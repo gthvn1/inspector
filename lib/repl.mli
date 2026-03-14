@@ -10,7 +10,7 @@
     end-of-file condition is encountered on standard input (for example when
     pressing Ctrl-D). *)
 
-val start : State.t -> unit
+val start : Domain.t -> unit
 (** [start state] starts the interactive command loop.
 
     The given [state] represents the current navigation state of the loaded log
