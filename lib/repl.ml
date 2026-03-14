@@ -24,11 +24,15 @@ let show_logs app =
   let stop = max stop height in
 
   for i = start to stop do
-    let log = show_line i app.domain in
-    let log = if Ui.is_truncated app.ui then truncate_log 90 log else log in
+    let log =
+      show_line i app.domain
+      |> (fun l -> if Ui.is_truncated app.ui then truncate_log 90 l else l)
+      |> Inspect.highlight
+    in
     let line = Printf.sprintf "[%d]: %s" (i + 1) log in
     print_endline
-    @@ if i = cursor app.domain then Style.reverse_text line else line
+    @@ (if i = cursor app.domain then Style.reverse_text line else line)
+    ^ Style.reset
   done
 
 let show_objects app = print_endline "TODO"
