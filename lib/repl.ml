@@ -42,6 +42,8 @@ let show_logs app =
     @@ if i = cursor app.domain then Style.reverse_text line else line
   done
 
+let show_objects app = print_endline "TODO"
+
 let commands =
   [
     ( "t",
@@ -81,11 +83,11 @@ let render state =
     (State.size state.domain)
     (State.dbsize state.domain);
 
-  print_endline "--------------------------------------------\n";
-
+  print_endline "\n---[logs]-----------------------------------";
   show_logs state;
-
-  print_endline "\n--------------------------------------------"
+  print_endline "\n---[objects]--------------------------------";
+  show_objects state;
+  print_endline "\n---[cli]------------------------------------"
 
 (* Helper function that executes a command and set it as the last command in UI state *)
 let exec_command cmd_name cmd app =
