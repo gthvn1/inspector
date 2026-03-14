@@ -23,6 +23,6 @@ let () =
   let open Inspector in
   let s = State.create ~logfile:!logfile ~dbfile:!dbfile in
   Printf.printf "Loaded %d lines from logs\n" (State.size s);
-  Printf.printf "Found %d entries in the DB\n" (State.dbsize s) ;
+  Printf.printf "Found %d entries in the DB\n" (State.dbsize s);
   Repl.help ();
   Repl.loop s
