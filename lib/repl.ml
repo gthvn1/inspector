@@ -2,18 +2,25 @@ type command = { description : string; run : State.t -> State.t }
 
 module Cmd = Map.Make (String)
 
+let truncate_log max_len s =
+  if String.length s > max_len then String.sub s 0 max_len ^ "..." else s
+
 let show_logs state =
   let open State in
   let height = 10 in
   let middle = height / 2 in
+  let max_size = size state - 1 in
 
-  (* We want the cursor in the middle of the log window *)
+  (* We want the cursor in the middle of the log window. And we want to always have
+   height lines *)
   let start = max 0 (cursor state - middle) in
-  let stop = min (size state) (cursor state + middle) in
+  let start = min start (max_size - height) in
+  let stop = min (cursor state + middle) max_size in
+  let stop = max stop height in
 
   for i = start to stop do
-    let prefix = if i = cursor state then "> " else "  " in
-    Printf.printf "%s[%d]: %s\n" prefix i (show_line i state)
+    let prefix = if i = cursor state then "->" else "  " in
+    Printf.printf "%s[%d]: %s\n" prefix i (truncate_log 90 (show_line i state))
   done
 
 let commands =
@@ -39,7 +46,7 @@ let render state =
   Printf.printf "Loaded %d lines from logs | DB entries: %d\n"
     (State.size state) (State.dbsize state);
 
-  print_endline "--------------------------------------------\n\n";
+  print_endline "--------------------------------------------\n";
 
   show_logs state;
 
