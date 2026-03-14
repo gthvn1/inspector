@@ -17,7 +17,7 @@ let show_logs app =
   (* We want the cursor in the middle of the log window. And we want to always have
    height lines *)
   let start = max 0 (D.cursor app.domain - middle) in
-  let start = min start (max_size - height) in
+  let start = min start (max_size - height + 1) in
   let stop = min (D.cursor app.domain + middle) max_size in
   let stop = max stop height in
 
@@ -34,10 +34,7 @@ let show_logs app =
   done
 
 (* TODO: control the size of printed list of objects *)
-let show_objects app =
-  Ui.get_objects app.ui
-  |> List.sort_uniq String.compare
-  |> List.iter print_endline
+let show_objects app = Ui.get_objects app.ui |> List.iter print_endline
 
 let commands =
   [
@@ -47,7 +44,9 @@ let commands =
       ; run =
           (fun app ->
             let line = D.show_current_line app.domain in
-            let refs = Inspect.find_opaqueref line in
+            let refs =
+              Inspect.find_opaqueref line |> List.sort_uniq String.compare
+            in
             { app with ui = Ui.set_objects refs app.ui })
       } )
   ; ( "n"
