@@ -1,0 +1,1 @@
+val highlight : string -> string
