@@ -43,6 +43,14 @@ let show_objects app = Ui.get_objects app.ui |> List.iter print_endline
 let commands =
   [
     {
+      names = [ "e"; "exit"; "q"; "quit" ]
+    ; desc = "Quit inspector"
+    ; run =
+        (fun _ ->
+          print_endline "Bye";
+          exit 0)
+    }
+  ; {
       names = [ "i"; "inspect" ]
     ; desc = "Inspect OpaqueRef of the current line"
     ; run =
@@ -115,9 +123,6 @@ let rec loop state =
     let cmd_name =
       match input with
       | "" -> Ui.get_last_cmd_opt state.ui
-      | "e" | "exit" | "q" | "quit" ->
-          print_endline "Bye";
-          exit 0
       | "h" | "help" ->
           help ();
           (* wait that user press enter *)
