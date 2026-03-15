@@ -4,7 +4,11 @@ module D = Domain
 type app_state = { domain : D.t; ui : Ui.t }
 (** Group state of the UI but also of the domain *)
 
-type command = { name : string; desc : string; run : app_state -> app_state }
+type command = {
+    names : string list
+  ; desc : string
+  ; run : app_state -> app_state
+}
 
 let truncate_log max_len s =
   if String.length s > max_len then String.sub s 0 max_len ^ "..." else s
@@ -39,7 +43,7 @@ let show_objects app = Ui.get_objects app.ui |> List.iter print_endline
 let commands =
   [
     {
-      name = "i"
+      names = [ "i"; "inspect" ]
     ; desc = "Inspect OpaqueRef of the current line"
     ; run =
         (fun app ->
@@ -55,23 +59,24 @@ let commands =
           { app with ui = Ui.set_objects refs app.ui })
     }
   ; {
-      name = "n"
+      names = [ "n"; "next" ]
     ; desc = "Move cursor to the next log line"
     ; run = (fun app -> { app with domain = D.next app.domain })
     }
   ; {
-      name = "p"
+      names = [ "p"; "prev" ]
     ; desc = "Move cursor to the previous line"
     ; run = (fun app -> { app with domain = D.prev app.domain })
     }
   ; {
-      name = "t"
+      names = [ "t"; "trunc"; "truncate" ]
     ; desc = "Switch truncated mode (lines are truncated to 90 characters)"
     ; run = (fun app -> { app with ui = Ui.switch_trunc app.ui })
     }
   ]
   |> List.to_seq
-  |> Seq.map (fun c -> (c.name, c))
+  |> Seq.flat_map (fun cmd ->
+      List.to_seq (List.map (fun name -> (name, cmd)) cmd.names))
   |> Cmd.of_seq
 
 let help () =
