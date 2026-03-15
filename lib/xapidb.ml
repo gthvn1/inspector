@@ -13,27 +13,23 @@ let parse_value s =
   | [ "OpaqueRef"; uuid ] -> Ref uuid
   | _ -> String s
 
+(** [table_name attr] extracts the name from a table attribute [attr]. We are
+    expecting a table attribute like: [(("", "name"), "Bond")]. If the attribute
+    is not well formed it raises an error. *)
 let table_name (attr : Xmlm.attribute list) : string =
-  if List.length attr <> 1 then (
-    Printf.eprintf "For table only one attribute name is expected, got %d\n"
-      (List.length attr);
-    failwith "Only one attribute name per table is expected");
-  let (_, local), table_name = List.hd attr in
-  assert (local = "name");
-  table_name
+  match attr with
+  | [ ((_, local), name) ] -> name
+  | l ->
+      Printf.eprintf "For table only one attribute name is expected, got %d\n"
+        (List.length l);
+      failwith "Only one attribute name per table is expected"
 
 (** [row_elements attr] returns a list of tuple where the first element will be
     the key and the second element is a value. Example:
     - host="OpaqueRef:3e.." -> ("host", Ref("3e.."))
     - type="host_internal" -> ("type", String("host_internal")) *)
 let row_elements (attr : Xmlm.attribute list) : elt list =
-  let rec loop acc = function
-    | [] -> acc
-    | x :: xs ->
-        let (_uri, local), name = x in
-        loop ((local, parse_value name) :: acc) xs
-  in
-  loop [] attr
+  List.map (fun ((_uri, local), name) -> (local, parse_value name)) attr
 
 (** [peek_ref elements] return the string that corresponds to "ref" or "_ref".
     It is the OpaqueRef of the object (element) itself. It raises an expection
@@ -58,8 +54,7 @@ let elt_to_string elt =
   in
   Printf.sprintf "%-20s\t%s" s1 s2
 
-let get_ref t ~ref =
-  match Hashtbl.find_opt t ref with None -> [] | Some l -> l
+let get_ref t ~ref = Option.value (Hashtbl.find_opt t ref) ~default:[]
 
 let from_channel ic =
   let htable : (string, elt list) Hashtbl.t = Hashtbl.create 128 in
@@ -116,7 +111,7 @@ let from_channel ic =
                    don't have nested element. *)
                 local :: stack
             | _ -> failwith (Printf.sprintf "%s is not handled" local))
-        | `El_end -> if List.is_empty stack then stack else List.tl stack
+        | `El_end -> ( match stack with [] -> [] | _ :: xs -> xs)
         | `Data _ ->
             (* Printf.printf "Data found\n" ;*)
             stack
