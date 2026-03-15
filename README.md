@@ -30,23 +30,11 @@ Example:
 dune exec ./bin/main.exe -- -log inputs/xensource.log -db inputs/state.xml
 ```
 
-Example output:
+---
 
-```
-Loaded 28 lines from logs | DB entries: 206
+## Screenshot
 
----logs----------------------------
-
-[13]: Mar 14 ... VDI.create ...
-[14]: Mar 14 ... OpaqueRef:24fac444...
-[15]: Mar 14 ... OpaqueRef:24fac444...
-
----objects-------------------------
-TODO
-
----cli-----------------------------
-inspector>
-```
+<img src="img/screenshot.png" alt="Inspector screenshot" />
 
 ---
 
