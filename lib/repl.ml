@@ -40,59 +40,72 @@ let show_logs app =
 (* TODO: control the size of printed list of objects *)
 let show_objects app = Ui.get_objects app.ui |> List.iter print_endline
 
+let help commands =
+  Printf.printf "Available commands:\n";
+  List.iter
+    (fun cmd ->
+      Printf.printf "  %-20s %s\n" (String.concat "|" cmd.names) cmd.desc)
+    commands;
+  (* wait that user press enter *)
+  print_endline "Press enter";
+  ignore (read_line ())
+
 let commands =
-  [
-    {
-      names = [ "e"; "exit"; "q"; "quit" ]
-    ; desc = "Quit inspector"
-    ; run =
-        (fun _ ->
-          print_endline "Bye";
-          exit 0)
-    }
-  ; {
-      names = [ "i"; "inspect" ]
-    ; desc = "Inspect OpaqueRef of the current line"
-    ; run =
-        (fun app ->
-          let line = D.show_current_line app.domain in
-          let refs =
-            Inspect.find_opaqueref line
-            |> List.sort_uniq String.compare
-            |> List.concat_map (fun ref ->
-                Printf.eprintf "DEBUG: looking for ref %s\n%!" ref;
-                Xapidb.get_ref ~ref (D.get_db app.domain)
-                |> List.map Xapidb.elt_to_string)
-          in
-          { app with ui = Ui.set_objects refs app.ui })
-    }
-  ; {
-      names = [ "n"; "next" ]
-    ; desc = "Move cursor to the next log line"
-    ; run = (fun app -> { app with domain = D.next app.domain })
-    }
-  ; {
-      names = [ "p"; "prev" ]
-    ; desc = "Move cursor to the previous line"
-    ; run = (fun app -> { app with domain = D.prev app.domain })
-    }
-  ; {
-      names = [ "t"; "trunc"; "truncate" ]
-    ; desc = "Switch truncated mode (lines are truncated to 90 characters)"
-    ; run = (fun app -> { app with ui = Ui.switch_trunc app.ui })
-    }
-  ]
-  |> List.to_seq
+  let rec cmd_list =
+    [
+      {
+        names = [ "e"; "exit"; "q"; "quit" ]
+      ; desc = "Quit inspector"
+      ; run =
+          (fun _ ->
+            print_endline "Bye";
+            exit 0)
+      }
+    ; {
+        names = [ "h"; "help" ]
+      ; desc = "Show this help"
+      ; run =
+          (fun app ->
+            help cmd_list;
+            app)
+      }
+    ; {
+        names = [ "i"; "inspect" ]
+      ; desc = "Inspect OpaqueRef of the current line"
+      ; run =
+          (fun app ->
+            let line = D.show_current_line app.domain in
+            let refs =
+              Inspect.find_opaqueref line
+              |> List.sort_uniq String.compare
+              |> List.concat_map (fun ref ->
+                  Printf.eprintf "DEBUG: looking for ref %s\n%!" ref;
+                  Xapidb.get_ref ~ref (D.get_db app.domain)
+                  |> List.map Xapidb.elt_to_string)
+            in
+            { app with ui = Ui.set_objects refs app.ui })
+      }
+    ; {
+        names = [ "n"; "next" ]
+      ; desc = "Move cursor to the next log line"
+      ; run = (fun app -> { app with domain = D.next app.domain })
+      }
+    ; {
+        names = [ "p"; "prev" ]
+      ; desc = "Move cursor to the previous line"
+      ; run = (fun app -> { app with domain = D.prev app.domain })
+      }
+    ; {
+        names = [ "t"; "trunc"; "truncate" ]
+      ; desc = "Switch truncated mode (lines are truncated to 90 characters)"
+      ; run = (fun app -> { app with ui = Ui.switch_trunc app.ui })
+      }
+    ]
+  in
+  cmd_list |> List.to_seq
   |> Seq.flat_map (fun cmd ->
       List.to_seq (List.map (fun name -> (name, cmd)) cmd.names))
   |> Cmd.of_seq
-
-let help () =
-  Printf.printf "Available commands:\n";
-  Cmd.iter (fun cmd args -> Printf.printf "  %-15s %s\n" cmd args.desc) commands;
-  print_endline "  [h]elp          Show this help";
-  print_endline "  [e]xit, [q]uit  Exit the inspector";
-  print_endline "\nPress Enter"
 
 let render state =
   Style.clear ();
@@ -123,11 +136,6 @@ let rec loop state =
       let cmd_name =
         match input |> String.trim |> String.lowercase_ascii with
         | "" -> Ui.get_last_cmd_opt state.ui
-        | "h" | "help" ->
-            help ();
-            (* wait that user press enter *)
-            ignore (read_line ());
-            None
         | str -> Some str
       in
 
