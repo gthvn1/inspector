@@ -116,27 +116,26 @@ let rec loop state =
   print_string "inspector> ";
   flush stdout;
 
-  try
-    let input = read_line () |> String.trim |> String.lowercase_ascii in
+  match read_line () with
+  | exception End_of_file -> print_endline "Bye"
+  | input -> (
+      (* Determine which command to execute *)
+      let cmd_name =
+        match input |> String.trim |> String.lowercase_ascii with
+        | "" -> Ui.get_last_cmd_opt state.ui
+        | "h" | "help" ->
+            help ();
+            (* wait that user press enter *)
+            ignore (read_line ());
+            None
+        | str -> Some str
+      in
 
-    (* Determine which command to execute *)
-    let cmd_name =
-      match input with
-      | "" -> Ui.get_last_cmd_opt state.ui
-      | "h" | "help" ->
-          help ();
-          (* wait that user press enter *)
-          ignore (read_line ());
-          None
-      | str -> Some str
-    in
-
-    match cmd_name with
-    | None -> loop state
-    | Some cmd_str -> (
-        match Cmd.find_opt cmd_str commands with
-        | None -> loop state
-        | Some c -> exec_command cmd_str c state |> loop)
-  with End_of_file -> print_endline "bye"
+      match cmd_name with
+      | None -> loop state
+      | Some cmd_str -> (
+          match Cmd.find_opt cmd_str commands with
+          | None -> loop state
+          | Some c -> exec_command cmd_str c state |> loop))
 
 let start domain = loop { domain; ui = Ui.create () }
