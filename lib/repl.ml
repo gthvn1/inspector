@@ -4,7 +4,7 @@ module D = Domain
 type app_state = { domain : D.t; ui : Ui.t }
 (** Group state of the UI but also of the domain *)
 
-type command = { desc : string; run : app_state -> app_state }
+type command = { name : string; desc : string; run : app_state -> app_state }
 
 let truncate_log max_len s =
   if String.length s > max_len then String.sub s 0 max_len ^ "..." else s
@@ -38,39 +38,41 @@ let show_objects app = Ui.get_objects app.ui |> List.iter print_endline
 
 let commands =
   [
-    ( "i"
-    , {
-        desc = "Inspect OpaqueRef of the current line"
-      ; run =
-          (fun app ->
-            let line = D.show_current_line app.domain in
-            let refs =
-              Inspect.find_opaqueref line
-              |> List.sort_uniq String.compare
-              |> List.concat_map (fun ref ->
-                  Printf.eprintf "DEBUG: looking for ref %s\n%!" ref;
-                  Xapidb.get_ref ~ref (D.get_db app.domain)
-                  |> List.map Xapidb.elt_to_string)
-            in
-            { app with ui = Ui.set_objects refs app.ui })
-      } )
-  ; ( "n"
-    , {
-        desc = "Move cursor to the next log line"
-      ; run = (fun app -> { app with domain = D.next app.domain })
-      } )
-  ; ( "p"
-    , {
-        desc = "Move cursor to the previous line"
-      ; run = (fun app -> { app with domain = D.prev app.domain })
-      } )
-  ; ( "t"
-    , {
-        desc = "Switch truncated mode (lines are truncated to 90 characters)"
-      ; run = (fun app -> { app with ui = Ui.switch_trunc app.ui })
-      } )
+    {
+      name = "i"
+    ; desc = "Inspect OpaqueRef of the current line"
+    ; run =
+        (fun app ->
+          let line = D.show_current_line app.domain in
+          let refs =
+            Inspect.find_opaqueref line
+            |> List.sort_uniq String.compare
+            |> List.concat_map (fun ref ->
+                Printf.eprintf "DEBUG: looking for ref %s\n%!" ref;
+                Xapidb.get_ref ~ref (D.get_db app.domain)
+                |> List.map Xapidb.elt_to_string)
+          in
+          { app with ui = Ui.set_objects refs app.ui })
+    }
+  ; {
+      name = "n"
+    ; desc = "Move cursor to the next log line"
+    ; run = (fun app -> { app with domain = D.next app.domain })
+    }
+  ; {
+      name = "p"
+    ; desc = "Move cursor to the previous line"
+    ; run = (fun app -> { app with domain = D.prev app.domain })
+    }
+  ; {
+      name = "t"
+    ; desc = "Switch truncated mode (lines are truncated to 90 characters)"
+    ; run = (fun app -> { app with ui = Ui.switch_trunc app.ui })
+    }
   ]
-  |> List.to_seq |> Cmd.of_seq
+  |> List.to_seq
+  |> Seq.map (fun c -> (c.name, c))
+  |> Cmd.of_seq
 
 let help () =
   Printf.printf "Available commands:\n";
@@ -102,7 +104,7 @@ let rec loop state =
   flush stdout;
 
   try
-    let input = read_line () |> String.lowercase_ascii in
+    let input = read_line () |> String.trim |> String.lowercase_ascii in
 
     (* Determine which command to execute *)
     let cmd_name =
