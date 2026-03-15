@@ -5,6 +5,9 @@ type t = (string, elt list) Hashtbl.t
 (* ---------------
         Helpers
      -------------- *)
+
+(** [parse_value s] returns Ref <UUID> if [s] is a string that starts with
+    "OpaqueRef", and String s otherwise. *)
 let parse_value s =
   match String.split_on_char ':' s with
   | [ "OpaqueRef"; uuid ] -> Ref uuid
@@ -19,7 +22,7 @@ let table_name (attr : Xmlm.attribute list) : string =
   assert (local = "name");
   table_name
 
-(** [row_elements attr] return a list of tuple where the first element will be
+(** [row_elements attr] returns a list of tuple where the first element will be
     the key and the second element is a value. Example:
     - host="OpaqueRef:3e.." -> ("host", Ref("3e.."))
     - type="host_internal" -> ("type", String("host_internal")) *)
@@ -70,14 +73,31 @@ let from_channel ic =
         match Xmlm.input input with
         | `Dtd _ -> stack (* can be safely ignored *)
         | `El_start (tag_name, tag_attr_lst) -> (
+            (* Example:
+                `El_start (("", "table"), [(("", "name"), "Bond")])
+                   tag_name     --> ("", "table"), 
+                   tag_attr_lst --> [(("", "name"), "Bond")] 
+             *)
             let _, local = tag_name in
             match local with
             | "database" | "manifest" | "pair" -> stack (* can be skipped *)
             | "table" ->
                 let tname = table_name tag_attr_lst in
+                (* with our previous example we will push "Bond" on the list *)
                 tname :: stack
             | "row" ->
                 (* Row is always part of a table and we are not expecting nested table *)
+                (* Example of row:
+                        `El_start
+                          (("", "row"),
+                           [(("", "ref"), "OpaqueRef:033c8a63-49e7-86b5-acc0-194c12f2a078");
+                            (("", "_ref"), "OpaqueRef:033c8a63-49e7-86b5-acc0-194c12f2a078");
+                            (("", "driver"), "OpaqueRef:d5c14883-7b16-4c9b-3aea-6e097ac39721");
+                            ...;
+                            (("", "uuid"), "22135b35-ebe5-b54b-cd35-836a05e96792");
+                            (("", "version"), "1.2")])
+                   => tag_attr_list --> [(("", "ref"), "OpaqueRef:033c8a63-49e7-86b5-acc0-194c12f2a078"); ...]
+                 *)
                 assert (List.length stack = 1);
                 let tbname = List.hd stack in
                 let elements = row_elements tag_attr_lst in
@@ -91,9 +111,9 @@ let from_channel ic =
                         (("table", String tbname) :: elements)
                   | Some _ -> Printf.eprintf "Ref %s is duplicated" ref
                 in
-                (* We need to add the row because when reaching `El_end we will remove
-                     it, and we will have the table on top. It works because we don't have
-                     nested element. *)
+                (* NOTE: We need to add the row because when reaching `El_end we will
+                   remove it, and we will have the table on top. It works because we
+                   don't have nested element. *)
                 local :: stack
             | _ -> failwith (Printf.sprintf "%s is not handled" local))
         | `El_end -> if List.is_empty stack then stack else List.tl stack
