@@ -41,4 +41,4 @@ val get_ref : db -> ref:string -> row
     opaque reference. *)
 
 val row_to_string : row -> string
-(** [row_to_string elt] converts a database row to a human‑readable string. *)
+(** [row_to_string row] converts a database row to a human‑readable string. *)

@@ -77,13 +77,15 @@ let peek_ref (r : row) : opaqueref =
 let size = Hashtbl.length
 
 (*List.iter (fun e -> Printf.printf "  %-20s\t%s\n" k (XapiDb.elt_to_string v) l))*)
-let elt_to_string elt =
-  let s1, s2 =
-    match elt with s1, String s2 -> (s1, s2) | s1, OpaqueRef uuid -> (s1, uuid)
-  in
-  Printf.sprintf "%-20s\t%s" s1 s2
+let value_to_string elt =
+  match elt with String s2 -> s2 | OpaqueRef uuid -> "OpaqueRef:" ^ uuid
 
-let row_to_string _row = "todo: print the raw"
+let row_to_string (row : row) =
+  let pair_to_string (key, value) =
+    Printf.sprintf "%-20s\t%s" key (value_to_string value)
+  in
+  row |> SMap.bindings |> List.map pair_to_string |> String.concat "\n"
+
 let get_ref t ~ref = Option.value (Hashtbl.find_opt t ref) ~default:empty_row
 
 let from_channel ic =
