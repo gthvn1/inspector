@@ -1,6 +1,6 @@
 type value = String of string | Ref of string (* OpaqueRef UUID only *)
-type e = string * value
-type t = (string, e list) Hashtbl.t
+type elt = string * value
+type t = (string, elt list) Hashtbl.t
 
 (* ---------------
         Helpers
@@ -23,7 +23,7 @@ let table_name (attr : Xmlm.attribute list) : string =
     the key and the second element is a value. Example:
     - host="OpaqueRef:3e.." -> ("host", Ref("3e.."))
     - type="host_internal" -> ("type", String("host_internal")) *)
-let row_elements (attr : Xmlm.attribute list) : e list =
+let row_elements (attr : Xmlm.attribute list) : elt list =
   let rec loop acc = function
     | [] -> acc
     | x :: xs ->
@@ -35,7 +35,7 @@ let row_elements (attr : Xmlm.attribute list) : e list =
 (** [peek_ref elements] return the string that corresponds to "ref" or "_ref".
     It is the OpaqueRef of the object (element) itself. It raises an expection
     if ref is not found. *)
-let peek_ref (elements : e list) : string =
+let peek_ref (elements : elt list) : string =
   let _, opaqueref =
     List.find (fun (s, _) -> s = "ref" || s = "_ref") elements
   in
@@ -59,7 +59,7 @@ let get_ref t ~ref =
   match Hashtbl.find_opt t ref with None -> [] | Some l -> l
 
 let from_channel ic =
-  let htable : (string, e list) Hashtbl.t = Hashtbl.create 128 in
+  let htable : (string, elt list) Hashtbl.t = Hashtbl.create 128 in
   let input = Xmlm.make_input (`Channel ic) in
   (* The goal of the loop is to fill the Hashtbl where the key is the OpaqueRef
        of an element. An element is basically the row but we will see as we go. *)
