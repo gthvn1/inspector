@@ -1,4 +1,4 @@
-type t = { lines : string array; cursor : int; db : Xapidb.t }
+type t = { lines : string array; cursor : int; db : Xapidb.db }
 (** Invariant: cursor >= 0 cursor < Array.length lines *)
 
 let size s = Array.length s.lines

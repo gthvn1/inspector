@@ -1,16 +1,20 @@
-type value = String of string | Ref of string (* OpaqueRef UUID only *)
-type elt = string * value
-type t = (string, elt list) Hashtbl.t
+module SMap = Map.Make (String)
+
+type opaqueref = string
+type value = String of string | OpaqueRef of opaqueref
+type row = value SMap.t
+type db = (opaqueref, row) Hashtbl.t
 
 (* ---------------
         Helpers
      -------------- *)
+let empty_row = SMap.empty
 
-(** [parse_value s] returns Ref <UUID> if [s] is a string that starts with
+(** [parse_value s] returnsOpaqueRef <UUID> if [s] is a string that starts with
     "OpaqueRef", and String s otherwise. *)
-let parse_value s =
+let parse_value s : value =
   match String.split_on_char ':' s with
-  | [ "OpaqueRef"; uuid ] -> Ref uuid
+  | [ "OpaqueRef"; uuid ] -> OpaqueRef uuid
   | _ -> String s
 
 (** [table_name attr] extracts the name from a table attribute [attr]. We are
@@ -24,43 +28,69 @@ let table_name (attr : Xmlm.attribute list) : string =
         (List.length l);
       failwith "Only one attribute name per table is expected"
 
-(** [row_elements attr] returns a list of tuple where the first element will be
-    the key and the second element is a value. Example:
-    - host="OpaqueRef:3e.." -> ("host", Ref("3e.."))
-    - type="host_internal" -> ("type", String("host_internal")) *)
-let row_elements (attr : Xmlm.attribute list) : elt list =
+(** [attr_to_row attr] returns a list of tuple where the first element will be
+    the key and the second element is a value.
+
+    Example: attr is expected to have this form:
+      [
+        (("", "driver"), "OpaqueRef:d5c14883-7b16-4c9b-3aea-6e097ac39721");
+        (("", "version"), "1.2");
+        ...
+      ]
+
+    and it should become:
+      {|
+        "driver": OpaqueRef "d5c14883-7b16-4c9b-3aea-6e097ac39721");
+        "version": String "1.2")
+        ...
+      |}
+  *)
+let attr_to_row (attr : Xmlm.attribute list) : row =
   List.map (fun ((_uri, local), name) -> (local, parse_value name)) attr
+  |> SMap.of_list
 
 (** [peek_ref elements] return the string that corresponds to "ref" or "_ref".
     It is the OpaqueRef of the object (element) itself. It raises an expection
-    if ref is not found. *)
-let peek_ref (elements : elt list) : string =
-  let _, opaqueref =
-    List.find (fun (s, _) -> s = "ref" || s = "_ref") elements
+    if ref is not found.
+
+    First we look for a key "ref" or "_ref" and when found we return the
+    OpaqueRef If there is no such key or its value is not an OpaqueRef we raised
+    an error. *)
+let peek_ref (r : row) : opaqueref =
+  let find name =
+    match SMap.find_opt name r with
+    | Some (OpaqueRef uuid) -> Some uuid
+    | Some (String s) ->
+        failwith (Printf.sprintf "OpaqueRef not found for %s, got %s" name s)
+    | None -> None
   in
-  match opaqueref with
-  | Ref uuid -> uuid
-  | String s -> failwith (Printf.sprintf "OpaqueRef is expected, got %s" s)
+  match find "ref" with
+  | Some uuid -> uuid
+  | None -> (
+      match find "_ref" with
+      | Some uuid -> uuid
+      | None -> failwith "Missing ref/_ref attribute")
 
 (* ---------------
-        Interface 
-     -------------- *)
+      Interface
+   -------------- *)
 let size = Hashtbl.length
 
 (*List.iter (fun e -> Printf.printf "  %-20s\t%s\n" k (XapiDb.elt_to_string v) l))*)
 let elt_to_string elt =
   let s1, s2 =
-    match elt with s1, String s2 -> (s1, s2) | s1, Ref uuid -> (s1, uuid)
+    match elt with s1, String s2 -> (s1, s2) | s1, OpaqueRef uuid -> (s1, uuid)
   in
   Printf.sprintf "%-20s\t%s" s1 s2
 
-let get_ref t ~ref = Option.value (Hashtbl.find_opt t ref) ~default:[]
+let row_to_string _row = "todo: print the raw"
+let get_ref t ~ref = Option.value (Hashtbl.find_opt t ref) ~default:empty_row
 
 let from_channel ic =
-  let htable : (string, elt list) Hashtbl.t = Hashtbl.create 128 in
+  let htable : (opaqueref, row) Hashtbl.t = Hashtbl.create 128 in
   let input = Xmlm.make_input (`Channel ic) in
   (* The goal of the loop is to fill the Hashtbl where the key is the OpaqueRef
-       of an element. An element is basically the row but we will see as we go. *)
+     of an element. An element is basically the row but we will see as we go. *)
   let rec read_loop (stack : string list) =
     try
       (* input as a side effect *)
@@ -95,15 +125,17 @@ let from_channel ic =
                  *)
                 assert (List.length stack = 1);
                 let tbname = List.hd stack in
-                let elements = row_elements tag_attr_lst in
+                let elements = attr_to_row tag_attr_lst in
                 let ref = peek_ref elements in
 
                 (* We can now insert the element, we should not have duplicated ref *)
                 let () =
                   match Hashtbl.find_opt htable ref with
                   | None ->
-                      Hashtbl.add htable ref
-                        (("table", String tbname) :: elements)
+                      (* We add the table name in the row so we will have the information later when
+                         printing information *)
+                      SMap.add "table" (String tbname) elements
+                      |> Hashtbl.add htable ref
                   | Some _ -> Printf.eprintf "Ref %s is duplicated" ref
                 in
                 (* NOTE: We need to add the row because when reaching `El_end we will

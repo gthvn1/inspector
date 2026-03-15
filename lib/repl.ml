@@ -78,10 +78,10 @@ let commands =
             let refs =
               Inspect.find_opaqueref line
               |> List.sort_uniq String.compare
-              |> List.concat_map (fun ref ->
+              |> List.map (fun ref ->
                   Printf.eprintf "DEBUG: looking for ref %s\n%!" ref;
                   Xapidb.get_ref ~ref (D.get_db app.domain)
-                  |> List.map Xapidb.elt_to_string)
+                  |> Xapidb.row_to_string)
             in
             { app with ui = Ui.set_objects refs app.ui })
       }

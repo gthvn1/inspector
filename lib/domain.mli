@@ -30,7 +30,7 @@ val cursor : t -> int
 val size : t -> int
 (** Returns the number of lines in the log. *)
 
-val get_db : t -> Xapidb.t
+val get_db : t -> Xapidb.db
 (** [get_db dom] returns the XAPI database registered in [dom]. *)
 
 val dbsize : t -> int
