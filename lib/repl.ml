@@ -16,10 +16,10 @@ let show_logs app =
 
   (* We want the cursor in the middle of the log window. And we want to always have
    height lines *)
-  let start = max 0 (D.cursor app.domain - middle) in
-  let start = min start (max_size - height + 1) in
-  let stop = min (D.cursor app.domain + middle) max_size in
-  let stop = max stop height in
+  let start =
+    max 0 (min (D.cursor app.domain - middle) (max_size - height + 1))
+  in
+  let stop = max height (min (D.cursor app.domain + middle) max_size) in
 
   for i = start to stop do
     let log =
@@ -47,11 +47,10 @@ let commands =
             let refs =
               Inspect.find_opaqueref line
               |> List.sort_uniq String.compare
-              |> List.map (fun ref ->
+              |> List.concat_map (fun ref ->
                   Printf.eprintf "DEBUG: looking for ref %s\n%!" ref;
                   Xapidb.get_ref ~ref (D.get_db app.domain)
                   |> List.map Xapidb.elt_to_string)
-              |> List.flatten
             in
             { app with ui = Ui.set_objects refs app.ui })
       } )

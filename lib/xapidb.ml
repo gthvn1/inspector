@@ -14,7 +14,7 @@ let table_name (attr : Xmlm.attribute list) : string =
   if List.length attr <> 1 then (
     Printf.eprintf "For table only one attribute name is expected, got %d\n"
       (List.length attr);
-    exit 1);
+    failwith "Only one attribute name per table is expected");
   let (_, local), table_name = List.hd attr in
   assert (local = "name");
   table_name
@@ -37,7 +37,7 @@ let row_elements (attr : Xmlm.attribute list) : e list =
     if ref is not found. *)
 let peek_ref (elements : e list) : string =
   let _, opaqueref =
-    List.find (fun (s, _) -> s = "ref" || s == "_ref") elements
+    List.find (fun (s, _) -> s = "ref" || s = "_ref") elements
   in
   match opaqueref with
   | Ref uuid -> uuid
