@@ -1,4 +1,3 @@
-module Cmd = Map.Make (String)
 module D = Domain
 
 type app_state = { domain : D.t; ui : Ui.t }
@@ -48,46 +47,40 @@ let help commands =
   print_endline "Press enter";
   ignore (read_line ())
 
-let commands =
-  let rec cmd_list =
-    [
-      {
-        names = [ "e"; "exit"; "q"; "quit" ]
-      ; desc = "Quit inspector"
-      ; run =
-          (fun _ ->
-            print_endline "Bye";
-            exit 0)
-      }
-    ; {
-        names = [ "h"; "help" ]
-      ; desc = "Show this help"
-      ; run =
-          (fun app ->
-            help cmd_list;
-            app)
-      }
-    ; {
-        names = [ "n"; "next" ]
-      ; desc = "Move cursor to the next log line"
-      ; run = (fun app -> { app with domain = D.next app.domain })
-      }
-    ; {
-        names = [ "p"; "prev" ]
-      ; desc = "Move cursor to the previous line"
-      ; run = (fun app -> { app with domain = D.prev app.domain })
-      }
-    ; {
-        names = [ "t"; "trunc"; "truncate" ]
-      ; desc = "Switch truncated mode (lines are truncated to 90 characters)"
-      ; run = (fun app -> { app with ui = Ui.switch_trunc app.ui })
-      }
-    ]
-  in
-  cmd_list |> List.to_seq
-  |> Seq.flat_map (fun cmd ->
-      List.to_seq (List.map (fun name -> (name, cmd)) cmd.names))
-  |> Cmd.of_seq
+let rec commands =
+  [
+    {
+      names = [ "e"; "exit"; "q"; "quit" ]
+    ; desc = "Quit inspector"
+    ; run =
+        (fun _ ->
+          print_endline "Bye";
+          exit 0)
+    }
+  ; {
+      names = [ "h"; "help" ]
+    ; desc = "Show this help"
+    ; run =
+        (fun app ->
+          help commands;
+          app)
+    }
+  ; {
+      names = [ "n"; "next" ]
+    ; desc = "Move cursor to the next log line"
+    ; run = (fun app -> { app with domain = D.next app.domain })
+    }
+  ; {
+      names = [ "p"; "prev" ]
+    ; desc = "Move cursor to the previous line"
+    ; run = (fun app -> { app with domain = D.prev app.domain })
+    }
+  ; {
+      names = [ "t"; "trunc"; "truncate" ]
+    ; desc = "Switch truncated mode (lines are truncated to 90 characters)"
+    ; run = (fun app -> { app with ui = Ui.switch_trunc app.ui })
+    }
+  ]
 
 let render state =
   Style.clear ();
@@ -104,6 +97,9 @@ let render state =
 let exec_command cmd_name cmd app =
   let app = cmd.run app in
   { app with ui = Ui.set_last_cmd cmd_name app.ui }
+
+let find_cmd_opt name commands =
+  List.find_opt (fun cmd -> List.mem name cmd.names) commands
 
 let rec loop state =
   (* Update the objects found on current line *)
@@ -136,7 +132,7 @@ let rec loop state =
       match cmd_name with
       | None -> loop state
       | Some cmd_str -> (
-          match Cmd.find_opt cmd_str commands with
+          match find_cmd_opt cmd_str commands with
           | None -> loop state
           | Some c -> exec_command cmd_str c state |> loop))
 
