@@ -40,14 +40,13 @@ dune exec ./bin/main.exe -- -log inputs/xensource.log -db inputs/state.xml
 
 ## Commands
 
-| Command | Description |
-|-------|-------------|
-| `i` | Update objects with the OpaqueRef found on the current line, if any |
-| `n` | Move cursor to next log line |
-| `p` | Move cursor to previous log line |
-| `t` | Toggle truncated log display |
-| `h`, `help` | Show help |
-| `q`, `quit`, `exit` | Exit inspector |
+|       Command       |           Description            |
+|---------------------|----------------------------------|
+| `n`                 | Move cursor to next log line     |
+| `p`                 | Move cursor to previous log line |
+| `t`                 | Toggle truncated log display     |
+| `h`, `help`         | Show help                        |
+| `q`, `quit`, `exit` | Exit inspector                   |
 
 Press **Enter** to repeat the last command.
 
@@ -69,13 +68,31 @@ Next steps of the project will allow inspecting objects referenced in the logs.
 
 ## Project structure
 
+### Architecture
+```
+Domain (model)
+  logs
+  cursor
+  XAPI database
+
+UI (view state)
+  truncated
+  objects list
+  object scroll
+  last command
+
+Repl (controller)
+  commands
+  rendering
+```
+
 ```
 bin/
   main.ml
 
 lib/
   inspect.ml
-  model.ml
+  domain.ml
   repl.ml
   style.ml
   ui.ml
@@ -83,7 +100,7 @@ lib/
 ```
 
 - **inspect**: identifier detection and highlighting
-- **model**: domain state (logs, cursor, database)
+- **domain**: domain state (logs, cursor, database)
 - **repl**: command loop and rendering
 - **style**: Ansi escape sequence to manage output
 - **ui**: UI state (truncation, inspector panel)
