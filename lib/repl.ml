@@ -52,10 +52,7 @@ let rec commands =
     {
       names = [ "e"; "exit"; "q"; "quit" ]
     ; desc = "Quit inspector"
-    ; run =
-        (fun _ ->
-          print_endline "Bye";
-          exit 0)
+    ; run = (fun _ -> raise Exit)
     }
   ; {
       names = [ "h"; "help" ]
@@ -123,4 +120,5 @@ let rec loop state =
       | None -> loop state
       | Some cmd -> cmd.run state |> loop)
 
-let start domain = loop { domain; ui = Ui.create () }
+let start domain =
+  try loop { domain; ui = Ui.create () } with Exit -> print_endline "Bye"
