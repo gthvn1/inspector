@@ -1,5 +1,9 @@
 type t = { lines : string array; cursor : int; db : Xapidb.db }
-(** Invariant: cursor >= 0 cursor < Array.length lines *)
+(** Invariant: cursor >= 0 cursor < Array.length lines
+
+    Note: cursor is part of domain and not UI because it is not only rendering,
+    it affects what objects are shown. So it is part of application state and
+    not only the UI. *)
 
 let size s = Array.length s.lines
 let dbsize s = Xapidb.size s.db

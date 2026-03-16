@@ -70,22 +70,6 @@ let commands =
             app)
       }
     ; {
-        names = [ "i"; "inspect" ]
-      ; desc = "Inspect OpaqueRef of the current line"
-      ; run =
-          (fun app ->
-            let line = D.show_current_line app.domain in
-            let refs =
-              Inspect.find_opaqueref line
-              |> List.sort_uniq String.compare
-              |> List.map (fun ref ->
-                  Printf.eprintf "DEBUG: looking for ref %s\n%!" ref;
-                  Xapidb.get_ref ~ref (D.get_db app.domain)
-                  |> Xapidb.row_to_string)
-            in
-            { app with ui = Ui.set_objects refs app.ui })
-      }
-    ; {
         names = [ "n"; "next" ]
       ; desc = "Move cursor to the next log line"
       ; run = (fun app -> { app with domain = D.next app.domain })
@@ -124,7 +108,19 @@ let exec_command cmd_name cmd app =
   { app with ui = Ui.set_last_cmd cmd_name app.ui }
 
 let rec loop state =
-  (* rendering part *)
+  (* Update the objects found on current line *)
+  let line = D.show_current_line state.domain in
+  let db = D.get_db state.domain in
+  let refs =
+    Inspect.find_opaqueref line
+    |> List.sort_uniq String.compare
+    |> List.map (fun ref ->
+        Printf.eprintf "DEBUG: looking for ref %s\n%!" ref;
+        Xapidb.get_ref ~ref db |> Xapidb.row_to_string)
+  in
+  let state = { state with ui = Ui.set_objects refs state.ui } in
+
+  (* Rendering part *)
   render state;
   print_string "inspector> ";
   flush stdout;
