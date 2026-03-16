@@ -5,6 +5,7 @@ type app_state = { domain : D.t; ui : Ui.t }
 
 type command = {
     names : string list
+  ; key : char
   ; desc : string
   ; run : app_state -> app_state
 }
@@ -50,12 +51,14 @@ let help commands =
 let rec commands =
   [
     {
-      names = [ "e"; "exit"; "q"; "quit" ]
+      names = [ "q"; "quit" ]
+    ; key = 'q'
     ; desc = "Quit inspector"
     ; run = (fun _ -> raise Exit)
     }
   ; {
       names = [ "h"; "help" ]
+    ; key = 'h'
     ; desc = "Show this help"
     ; run =
         (fun app ->
@@ -64,16 +67,19 @@ let rec commands =
     }
   ; {
       names = [ "n"; "next" ]
+    ; key = 'n'
     ; desc = "Move cursor to the next log line"
     ; run = (fun app -> { app with domain = D.next app.domain })
     }
   ; {
       names = [ "p"; "prev" ]
+    ; key = 'p'
     ; desc = "Move cursor to the previous line"
     ; run = (fun app -> { app with domain = D.prev app.domain })
     }
   ; {
-      names = [ "t"; "trunc"; "truncate" ]
+      names = [ "t"; "truncate" ]
+    ; key = 't'
     ; desc = "Switch truncated mode (lines are truncated to 90 characters)"
     ; run = (fun app -> { app with ui = Ui.switch_trunc app.ui })
     }
@@ -90,10 +96,7 @@ let render state =
   show_objects state;
   print_endline "\n---[cli]------------------------------------"
 
-let find_cmd_opt c commands =
-  (* We will improve this later ... *)
-  let name = Printf.sprintf "%c" c in
-  List.find_opt (fun cmd -> List.mem name cmd.names) commands
+let find_cmd_opt c commands = List.find_opt (fun cmd -> cmd.key = c) commands
 
 let rec loop state =
   (* Update the objects found on current line *)
