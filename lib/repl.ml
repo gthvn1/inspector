@@ -13,17 +13,15 @@ type command = {
 let truncate_log max_len s =
   if String.length s > max_len then String.sub s 0 max_len ^ "..." else s
 
-let show_logs app =
-  let height = 10 in
+let viewport ~pos ~height ~size =
   let middle = height / 2 in
-  let max_size = D.size app.domain - 1 in
+  let start = max 0 (pos - middle) in
+  let stop = min (start + height) size in
+  (start, stop)
 
-  (* We want the cursor in the middle of the log window. And we want to always have
-   height lines *)
-  let start =
-    max 0 (min (D.cursor app.domain - middle) (max_size - height + 1))
-  in
-  let stop = max height (min (D.cursor app.domain + middle) max_size) in
+let show_logs app =
+  let size = D.size app.domain - 1 in
+  let start, stop = viewport ~pos:(D.cursor app.domain) ~height:10 ~size in
 
   for i = start to stop do
     let log =
