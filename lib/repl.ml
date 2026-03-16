@@ -93,11 +93,6 @@ let render state =
   show_objects state;
   print_endline "\n---[cli]------------------------------------"
 
-(* Helper function that executes a command and set it as the last command in UI state *)
-let exec_command cmd_name cmd app =
-  let app = cmd.run app in
-  { app with ui = Ui.set_last_cmd cmd_name app.ui }
-
 let find_cmd_opt name commands =
   List.find_opt (fun cmd -> List.mem name cmd.names) commands
 
@@ -123,17 +118,9 @@ let rec loop state =
   | exception End_of_file -> print_endline "Bye"
   | input -> (
       (* Determine which command to execute *)
-      let cmd_name =
-        match input |> String.trim |> String.lowercase_ascii with
-        | "" -> Ui.get_last_cmd_opt state.ui
-        | str -> Some str
-      in
-
-      match cmd_name with
+      let cmd_str = input |> String.lowercase_ascii in
+      match find_cmd_opt cmd_str commands with
       | None -> loop state
-      | Some cmd_str -> (
-          match find_cmd_opt cmd_str commands with
-          | None -> loop state
-          | Some c -> exec_command cmd_str c state |> loop))
+      | Some cmd -> cmd.run state |> loop)
 
 let start domain = loop { domain; ui = Ui.create () }

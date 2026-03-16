@@ -5,14 +5,6 @@ val create : unit -> t
 (** [create ()] returns a UI state with truncation enabled by default, last
     command set to [None] and an empty list of objects. *)
 
-val get_last_cmd_opt : t -> string option
-(** [get_last_cmd_opt ui] returns the optional string that is the last command
-    executed. *)
-
-val set_last_cmd : string -> t -> t
-(** [set_last_cmd cmd ui] returns a UI state where the last command has been
-    updated to [cmd]. *)
-
 val get_objects : t -> string list
 (** [get_objects ui] returns objects currently registered in the [ui]. *)
 
