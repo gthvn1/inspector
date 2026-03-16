@@ -90,7 +90,9 @@ let render state =
   show_objects state;
   print_endline "\n---[cli]------------------------------------"
 
-let find_cmd_opt name commands =
+let find_cmd_opt c commands =
+  (* We will improve this later ... *)
+  let name = Printf.sprintf "%c" c in
   List.find_opt (fun cmd -> List.mem name cmd.names) commands
 
 let rec loop state =
@@ -111,14 +113,19 @@ let rec loop state =
   print_string "inspector> ";
   flush stdout;
 
-  match read_line () with
+  match input_char stdin with
   | exception End_of_file -> print_endline "Bye"
-  | input -> (
-      (* Determine which command to execute *)
-      let cmd_str = input |> String.lowercase_ascii in
-      match find_cmd_opt cmd_str commands with
+  | carlu -> (
+      match find_cmd_opt carlu commands with
       | None -> loop state
       | Some cmd -> cmd.run state |> loop)
 
 let start domain =
-  try loop { domain; ui = Ui.create () } with Exit -> print_endline "Bye"
+  let term = Unix.tcgetattr Unix.stdin in
+  let raw = { term with Unix.c_icanon = false } in
+  Unix.tcsetattr Unix.stdin Unix.TCSANOW raw;
+  Fun.protect
+    ~finally:(fun () -> Unix.tcsetattr Unix.stdin Unix.TCSANOW term)
+    (fun () ->
+      try loop { domain; ui = Ui.create () }
+      with Exit -> print_endline "\nBye")

@@ -1,3 +1,3 @@
 (library
  (name inspector)
- (libraries xmlm re))
+ (libraries unix xmlm re))
