@@ -124,7 +124,7 @@ let render state =
   print_endline "\n---[cli]------------------------------------"
 
 let rec loop state =
-  (* Update the objects found on current line *)
+  (* Update UI objects with OpaqueRef found on the current line *)
   let line = D.get_current_line state.domain in
   let db = D.get_db state.domain in
   let refs =
@@ -136,11 +136,12 @@ let rec loop state =
   in
   let state = { state with ui = Ui.set_objects refs state.ui } in
 
-  (* Rendering part *)
+  (* Rendering *)
   render state;
   print_string "inspector> ";
   flush stdout;
 
+  (* Loop *)
   match read_key () with
   | exception End_of_file -> print_endline "Bye"
   | input -> (
