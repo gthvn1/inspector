@@ -35,36 +35,6 @@ let find_cmd_opt input commands =
   | K k -> List.find_opt (fun cmd -> cmd.key = k) commands
   | S s -> List.find_opt (fun cmd -> List.mem s cmd.names) commands
 
-let truncate_log max_len s =
-  if String.length s > max_len then String.sub s 0 max_len ^ "..." else s
-
-let viewport ~pos ~height ~size =
-  let middle = height / 2 in
-  let start = max 0 (pos - middle) in
-  let stop = min (start + height) size in
-  (start, stop)
-
-let show_logs app =
-  let trunc_size = 80 in
-  let size = D.size app.domain - 1 in
-  let start, stop = viewport ~pos:(D.cursor app.domain) ~height:10 ~size in
-
-  for i = start to stop do
-    let log =
-      D.get_line i app.domain
-      |> (fun l ->
-      if Ui.is_truncated app.ui then truncate_log trunc_size l else l)
-      |> Inspect.highlight
-    in
-    let line = Printf.sprintf "[%d]: %s" (i + 1) log in
-    print_endline
-    @@ (if i = D.cursor app.domain then Style.reverse_text line else line)
-    ^ Style.reset
-  done
-
-(* TODO: control the size of printed list of objects *)
-let show_objects app = Ui.get_objects app.ui |> List.iter print_endline
-
 let help commands =
   Printf.printf "Available commands:\n";
   List.iter
@@ -111,6 +81,36 @@ let rec commands =
     ; run = (fun app -> { app with ui = Ui.switch_trunc app.ui })
     }
   ]
+
+let truncate_log max_len s =
+  if String.length s > max_len then String.sub s 0 max_len ^ "..." else s
+
+let viewport ~pos ~height ~size =
+  let middle = height / 2 in
+  let start = max 0 (pos - middle) in
+  let stop = min (start + height) size in
+  (start, stop)
+
+let show_logs app =
+  let trunc_size = 80 in
+  let size = D.size app.domain - 1 in
+  let start, stop = viewport ~pos:(D.cursor app.domain) ~height:10 ~size in
+
+  for i = start to stop do
+    let log =
+      D.get_line i app.domain
+      |> (fun l ->
+      if Ui.is_truncated app.ui then truncate_log trunc_size l else l)
+      |> Inspect.highlight
+    in
+    let line = Printf.sprintf "[%d]: %s" (i + 1) log in
+    print_endline
+    @@ (if i = D.cursor app.domain then Style.reverse_text line else line)
+    ^ Style.reset
+  done
+
+(* TODO: control the size of printed list of objects *)
+let show_objects app = Ui.get_objects app.ui |> List.iter print_endline
 
 let render state =
   Style.clear ();

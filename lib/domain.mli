@@ -13,8 +13,7 @@ val get_line : int -> t -> string
     the range of logs, question marks are returned. *)
 
 val get_current_line : t -> string
-(** [get_current_line s] returns the line currently pointed to by the cursor.
-*)
+(** [get_current_line s] returns the line currently pointed to by the cursor. *)
 
 val next : t -> t
 (** [next s] moves the cursor to the next line if possible and returns the new
