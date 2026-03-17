@@ -148,7 +148,15 @@ let rec loop state =
         Printf.eprintf "DEBUG: looking for ref %s\n%!" ref;
         Xapidb.get_by_ref ~ref db |> Xapidb.row_to_string)
   in
-  let state = { state with ui = Ui.set_objects refs state.ui } in
+  let uuids =
+    Inspect.find_uuid line
+    |> List.sort_uniq String.compare
+    |> List.map (fun uuid ->
+        Printf.eprintf "DEBUG: looking for uuid %s\n%!" uuid;
+        Xapidb.get_by_uuid ~uuid db |> Xapidb.row_to_string)
+  in
+  (* TODO: we probably need a better way than concatenate refs and uuids *)
+  let state = { state with ui = Ui.set_objects (refs @ uuids) state.ui } in
 
   (* Rendering *)
   render state;

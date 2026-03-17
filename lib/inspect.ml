@@ -1,7 +1,8 @@
+(* capture is on uuid_pattern *)
 let uuid_pattern =
-  "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+  "([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"
 
-let re_ref = Re.Perl.compile_pat "OpaqueRef:([0-9a-f-]{36})"
+let re_ref = Re.Perl.compile_pat @@ "OpaqueRef:" ^ uuid_pattern
 let re_uuid = Re.Perl.compile_pat uuid_pattern
 
 let find_opaqueref line =
