@@ -32,5 +32,8 @@ val size : t -> int
 val get_db : t -> Xapidb.db
 (** [get_db dom] returns the XAPI database registered in [dom]. *)
 
-val dbsize : t -> int
-(** Returns the number of entries in the database. *)
+val ref_count : t -> int
+(** Returns the number of reference in the database. *)
+
+val uuid_count : t -> int
+(** Returns the number of UUID in the database. *)

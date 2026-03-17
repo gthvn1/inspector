@@ -118,8 +118,8 @@ let show_objects app = Ui.get_objects app.ui |> List.iter print_endline
 
 let show_status app =
   Style.bold_text
-  @@ Printf.sprintf "status> Lines: %d | DB: %d entries | Cursor: %d"
-       (D.size app.domain) (D.dbsize app.domain)
+  @@ Printf.sprintf "status> Lines: %d | DB: %d Refs, %d uuid | Cursor: %d"
+       (D.size app.domain) (D.ref_count app.domain) (D.uuid_count app.domain)
        (D.cursor app.domain + 1)
 
 let render state =
