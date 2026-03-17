@@ -40,15 +40,16 @@ dune exec ./bin/main.exe -- -log inputs/xensource.log -db inputs/state.xml
 
 ## Commands
 
-|       Command       |           Description            |
-|---------------------|----------------------------------|
-| `n`                 | Move cursor to next log line     |
-| `p`                 | Move cursor to previous log line |
-| `t`                 | Toggle truncated log display     |
-| `h`, `help`         | Show help                        |
-| `q`, `quit`, `exit` | Exit inspector                   |
-
-Press **Enter** to repeat the last command.
+- **Key**: press the key directly
+- **Command**: enter a command after pressing ':'
+  
+|   Key  | Command  |           Description            |
+|--------|----------|----------------------------------|
+| <Down> | `next`   | Move cursor to next log line     |
+| <Up>   | `prev`   | Move cursor to previous log line |
+| t      | `trunc`  | Toggle truncated log display     |
+| h      | `help`   | Show help                        |
+| q      | `quit`   | Quit inspector                   |
 
 ---
 
