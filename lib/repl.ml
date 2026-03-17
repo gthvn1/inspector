@@ -30,6 +30,11 @@ let read_key () : user_input =
     | ':' -> S (read_line ())
     | _ -> K Unkown
 
+let find_cmd_opt input commands =
+  match input with
+  | K k -> List.find_opt (fun cmd -> cmd.key = k) commands
+  | S s -> List.find_opt (fun cmd -> List.mem s cmd.names) commands
+
 let truncate_log max_len s =
   if String.length s > max_len then String.sub s 0 max_len ^ "..." else s
 
@@ -40,13 +45,15 @@ let viewport ~pos ~height ~size =
   (start, stop)
 
 let show_logs app =
+  let trunc_size = 80 in
   let size = D.size app.domain - 1 in
   let start, stop = viewport ~pos:(D.cursor app.domain) ~height:10 ~size in
 
   for i = start to stop do
     let log =
       D.show_line i app.domain
-      |> (fun l -> if Ui.is_truncated app.ui then truncate_log 90 l else l)
+      |> (fun l ->
+      if Ui.is_truncated app.ui then truncate_log trunc_size l else l)
       |> Inspect.highlight
     in
     let line = Printf.sprintf "[%d]: %s" (i + 1) log in
@@ -115,11 +122,6 @@ let render state =
   print_endline "\n---[objects]--------------------------------";
   show_objects state;
   print_endline "\n---[cli]------------------------------------"
-
-let find_cmd_opt input commands =
-  match input with
-  | K k -> List.find_opt (fun cmd -> cmd.key = k) commands
-  | S s -> List.find_opt (fun cmd -> List.mem s cmd.names) commands
 
 let rec loop state =
   (* Update the objects found on current line *)
