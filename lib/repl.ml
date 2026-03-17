@@ -78,7 +78,7 @@ let help commands =
 let rec commands =
   [
     {
-      names = [ "q"; "quit" ]
+      names = [ "q"; "e"; "quit"; "exit" ]
     ; key = Quit
     ; desc = "Quit inspector"
     ; run = (fun _ -> raise Exit)
@@ -99,13 +99,13 @@ let rec commands =
     ; run = (fun app -> { app with domain = D.next app.domain })
     }
   ; {
-      names = [ "p"; "prev" ]
+      names = [ "p"; "prev"; "previous" ]
     ; key = Up
     ; desc = "Move cursor to the previous line"
     ; run = (fun app -> { app with domain = D.prev app.domain })
     }
   ; {
-      names = [ "t"; "truncate" ]
+      names = [ "t"; "trunc"; "truncate" ]
     ; key = Trunc
     ; desc = "Switch truncated mode (lines are truncated to 90 characters)"
     ; run = (fun app -> { app with ui = Ui.switch_trunc app.ui })
