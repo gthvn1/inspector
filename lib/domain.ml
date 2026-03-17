@@ -6,7 +6,7 @@ type t = { lines : string array; cursor : int; db : Xapidb.db }
     not only the UI. *)
 
 let size s = Array.length s.lines
-let dbsize s = Xapidb.size s.db
+let dbsize s = Xapidb.ref_count s.db
 let cursor s = s.cursor
 
 let create ~(logfile : string) ~(dbfile : string) : t =

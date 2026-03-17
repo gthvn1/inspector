@@ -146,7 +146,7 @@ let rec loop state =
     |> List.sort_uniq String.compare
     |> List.map (fun ref ->
         Printf.eprintf "DEBUG: looking for ref %s\n%!" ref;
-        Xapidb.get_ref ~ref db |> Xapidb.row_to_string)
+        Xapidb.get_by_ref ~ref db |> Xapidb.row_to_string)
   in
   let state = { state with ui = Ui.set_objects refs state.ui } in
 

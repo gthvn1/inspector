@@ -1,9 +1,14 @@
 module SMap = Map.Make (String)
 
 type opaqueref = string
+type uuid = string
 type value = String of string | OpaqueRef of opaqueref
 type row = value SMap.t
-type db = (opaqueref, row) Hashtbl.t
+
+type db = {
+    by_ref : (opaqueref, row) Hashtbl.t
+  ; by_uuid : (uuid, opaqueref) Hashtbl.t
+}
 
 (* ---------------
         Helpers
@@ -28,23 +33,27 @@ let table_name (attr : Xmlm.attribute list) : string =
         (List.length l);
       failwith "Only one attribute name per table is expected"
 
-(** [attr_to_row attr] returns a list of tuple where the first element will be
-    the key and the second element is a value.
+(** [attr_to_row attr] converts an XML attribute list into a map from keys to
+    values.
 
-    Example: attr is expected to have this form:
+    Each attribute is a pair [((uri, key), value)]. The [key] is used as the map
+    key, and [value] is parsed using {!parse_value}.
+
+    Example input:
+    {v
       [
         (("", "driver"), "OpaqueRef:d5c14883-7b16-4c9b-3aea-6e097ac39721");
         (("", "version"), "1.2");
-        ...
       ]
+    v}
 
-    and it should become:
-      {|
-        "driver": OpaqueRef "d5c14883-7b16-4c9b-3aea-6e097ac39721");
-        "version": String "1.2")
-        ...
-      |}
-  *)
+    Resulting map (conceptually):
+    {v
+      {
+        "driver"  -> OpaqueRef "d5c14883-7b16-4c9b-3aea-6e097ac39721";
+        "version" -> String "1.2";
+      }
+    v} *)
 let attr_to_row (attr : Xmlm.attribute list) : row =
   List.map (fun ((_uri, local), name) -> (local, parse_value name)) attr
   |> SMap.of_list
@@ -74,7 +83,8 @@ let peek_ref (r : row) : opaqueref =
 (* ---------------
       Interface
    -------------- *)
-let size = Hashtbl.length
+let ref_count db = Hashtbl.length db.by_ref
+let uuid_count db = Hashtbl.length db.by_uuid
 
 (*List.iter (fun e -> Printf.printf "  %-20s\t%s\n" k (XapiDb.elt_to_string v) l))*)
 let value_to_string elt =
@@ -86,10 +96,17 @@ let row_to_string (row : row) =
   in
   row |> SMap.bindings |> List.map pair_to_string |> String.concat "\n"
 
-let get_ref t ~ref = Option.value (Hashtbl.find_opt t ref) ~default:empty_row
+let get_by_ref db ~ref =
+  Option.value (Hashtbl.find_opt db.by_ref ref) ~default:empty_row
+
+let get_by_uuid db ~(uuid : uuid) =
+  match Hashtbl.find_opt db.by_uuid uuid with
+  | None -> empty_row
+  | Some ref -> get_by_ref db ~ref
 
 let from_channel ic =
-  let htable : (opaqueref, row) Hashtbl.t = Hashtbl.create 128 in
+  let ref_table : (opaqueref, row) Hashtbl.t = Hashtbl.create 128 in
+  let uuid_table : (uuid, opaqueref) Hashtbl.t = Hashtbl.create 128 in
   let input = Xmlm.make_input (`Channel ic) in
   (* The goal of the loop is to fill the Hashtbl where the key is the OpaqueRef
      of an element. An element is basically the row but we will see as we go. *)
@@ -132,12 +149,12 @@ let from_channel ic =
 
                 (* We can now insert the element, we should not have duplicated ref *)
                 let () =
-                  match Hashtbl.find_opt htable ref with
+                  match Hashtbl.find_opt ref_table ref with
                   | None ->
                       (* We add the table name in the row so we will have the information later when
                          printing information *)
                       SMap.add "table" (String tbname) elements
-                      |> Hashtbl.add htable ref
+                      |> Hashtbl.add ref_table ref
                   | Some _ -> Printf.eprintf "Ref %s is duplicated" ref
                 in
                 (* NOTE: We need to add the row because when reaching `El_end we will
@@ -158,7 +175,7 @@ let from_channel ic =
         exit 1)
   in
   read_loop [];
-  htable
+  { by_ref = ref_table; by_uuid = uuid_table }
 
 let _sample_xml : string =
   {|
