@@ -85,14 +85,18 @@ let rec commands =
 let truncate_log max_len s =
   if String.length s > max_len then String.sub s 0 max_len ^ "..." else s
 
+(* Helpers for display *)
 let viewport ~pos ~height ~size =
   let middle = height / 2 in
   let start = max 0 (pos - middle) in
   let stop = min (start + height) size in
   (start, stop)
 
-let show_logs app =
-  let trunc_size = 80 in
+let header title width =
+  let pad = width - String.length title - 2 in
+  "+--[ " ^ title ^ " ]" ^ String.make pad '-' ^ "+"
+
+let show_logs trunc_size app =
   let size = D.size app.domain - 1 in
   let start, stop = viewport ~pos:(D.cursor app.domain) ~height:10 ~size in
 
@@ -103,7 +107,7 @@ let show_logs app =
       if Ui.is_truncated app.ui then truncate_log trunc_size l else l)
       |> Inspect.highlight
     in
-    let line = Printf.sprintf "[%d]: %s" (i + 1) log in
+    let line = Printf.sprintf "%s" log in
     print_endline
     @@ (if i = D.cursor app.domain then Style.reverse_text line else line)
     ^ Style.reset
@@ -112,16 +116,26 @@ let show_logs app =
 (* TODO: control the size of printed list of objects *)
 let show_objects app = Ui.get_objects app.ui |> List.iter print_endline
 
-let render state =
-  Style.clear ();
-  Printf.printf "Loaded %d lines from logs | DB entries: %d\n"
-    (D.size state.domain) (D.dbsize state.domain);
+let show_status app =
+  Style.bold_text
+  @@ Printf.sprintf "status> Lines: %d | DB: %d entries | Cursor: %d"
+       (D.size app.domain) (D.dbsize app.domain)
+       (D.cursor app.domain + 1)
 
-  print_endline "\n---[logs]-----------------------------------";
-  show_logs state;
-  print_endline "\n---[objects]--------------------------------";
+let render state =
+  let width = 90 in
+
+  Style.clear ();
+
+  print_endline (show_status state);
+
+  print_endline (header "Logs" width);
+  show_logs (width - 10) state;
+
+  print_endline (header "Objects" width);
   show_objects state;
-  print_endline "\n---[cli]------------------------------------"
+
+  print_endline (header "CLI" width)
 
 let rec loop state =
   (* Update UI objects with OpaqueRef found on the current line *)
