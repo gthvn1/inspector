@@ -3,12 +3,32 @@ module D = Domain
 type app_state = { domain : D.t; ui : Ui.t }
 (** Group state of the UI but also of the domain *)
 
+type key = Up | Down | Help | Trunc | Quit | Unkown
+type user_input = K of key | S of string
+
 type command = {
     names : string list
-  ; key : char
+  ; key : key
   ; desc : string
   ; run : app_state -> app_state
 }
+
+(* Read key in raw mode *)
+let read_key () : user_input =
+  let c = input_char stdin in
+  (* escape character ^ in dec is 27
+       - Up is ESC[A; => \027[A *)
+  if c = '\027' then
+    let c1 = input_char stdin in
+    let c2 = input_char stdin in
+    match (c1, c2) with '[', 'A' -> K Up | '[', 'B' -> K Down | _ -> K Unkown
+  else
+    match c with
+    | 'q' | 'e' -> K Quit
+    | 'h' -> K Help
+    | 't' -> K Trunc
+    | ':' -> S (read_line ())
+    | _ -> K Unkown
 
 let truncate_log max_len s =
   if String.length s > max_len then String.sub s 0 max_len ^ "..." else s
@@ -52,13 +72,13 @@ let rec commands =
   [
     {
       names = [ "q"; "quit" ]
-    ; key = 'q'
+    ; key = Quit
     ; desc = "Quit inspector"
     ; run = (fun _ -> raise Exit)
     }
   ; {
       names = [ "h"; "help" ]
-    ; key = 'h'
+    ; key = Help
     ; desc = "Show this help"
     ; run =
         (fun app ->
@@ -67,19 +87,19 @@ let rec commands =
     }
   ; {
       names = [ "n"; "next" ]
-    ; key = 'n'
+    ; key = Down
     ; desc = "Move cursor to the next log line"
     ; run = (fun app -> { app with domain = D.next app.domain })
     }
   ; {
       names = [ "p"; "prev" ]
-    ; key = 'p'
+    ; key = Up
     ; desc = "Move cursor to the previous line"
     ; run = (fun app -> { app with domain = D.prev app.domain })
     }
   ; {
       names = [ "t"; "truncate" ]
-    ; key = 't'
+    ; key = Trunc
     ; desc = "Switch truncated mode (lines are truncated to 90 characters)"
     ; run = (fun app -> { app with ui = Ui.switch_trunc app.ui })
     }
@@ -96,7 +116,10 @@ let render state =
   show_objects state;
   print_endline "\n---[cli]------------------------------------"
 
-let find_cmd_opt c commands = List.find_opt (fun cmd -> cmd.key = c) commands
+let find_cmd_opt input commands =
+  match input with
+  | K k -> List.find_opt (fun cmd -> cmd.key = k) commands
+  | S s -> List.find_opt (fun cmd -> List.mem s cmd.names) commands
 
 let rec loop state =
   (* Update the objects found on current line *)
@@ -116,10 +139,10 @@ let rec loop state =
   print_string "inspector> ";
   flush stdout;
 
-  match input_char stdin with
+  match read_key () with
   | exception End_of_file -> print_endline "Bye"
-  | carlu -> (
-      match find_cmd_opt carlu commands with
+  | input -> (
+      match find_cmd_opt input commands with
       | None -> loop state
       | Some cmd -> cmd.run state |> loop)
 
