@@ -15,7 +15,7 @@ type db = {
      -------------- *)
 let empty_row = SMap.empty
 
-(** [parse_value s] returnsOpaqueRef <UUID> if [s] is a string that starts with
+(** [parse_value s] returns OpaqueRef <UUID> if [s] is a string that starts with
     "OpaqueRef", and String s otherwise. *)
 let parse_value s : value =
   match String.split_on_char ':' s with
@@ -68,17 +68,22 @@ let attr_to_row (attr : Xmlm.attribute list) : row =
 let peek_ref (r : row) : opaqueref =
   let find name =
     match SMap.find_opt name r with
-    | Some (OpaqueRef uuid) -> Some uuid
+    | Some (OpaqueRef ref) -> Some ref
     | Some (String s) ->
         failwith (Printf.sprintf "OpaqueRef not found for %s, got %s" name s)
     | None -> None
   in
   match find "ref" with
-  | Some uuid -> uuid
+  | Some ref -> ref
   | None -> (
       match find "_ref" with
-      | Some uuid -> uuid
+      | Some ref -> ref
       | None -> failwith "Missing ref/_ref attribute")
+
+let peek_uuid (r : row) : uuid =
+  match SMap.find_opt "uuid" r with
+  | Some (String uuid) -> uuid
+  | _ -> failwith "uuid not found in the row"
 
 (* ---------------
       Interface
@@ -146,6 +151,7 @@ let from_channel ic =
                 let tbname = List.hd stack in
                 let elements = attr_to_row tag_attr_lst in
                 let ref = peek_ref elements in
+                let uuid = peek_uuid elements in
 
                 (* We can now insert the element, we should not have duplicated ref *)
                 let () =
@@ -156,6 +162,12 @@ let from_channel ic =
                       SMap.add "table" (String tbname) elements
                       |> Hashtbl.add ref_table ref
                   | Some _ -> Printf.eprintf "Ref %s is duplicated" ref
+                in
+                (* And we shouldn't have duplicated UUID as well *)
+                let () =
+                  match Hashtbl.find_opt uuid_table uuid with
+                  | None -> Hashtbl.add uuid_table uuid ref
+                  | Some _ -> Printf.eprintf "UUID %s is duplicated" uuid
                 in
                 (* NOTE: We need to add the row because when reaching `El_end we will
                    remove it, and we will have the table on top. It works because we
