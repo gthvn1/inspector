@@ -24,7 +24,7 @@ let read_key () : user_input =
     match (c1, c2) with '[', 'A' -> K Up | '[', 'B' -> K Down | _ -> K Unkown
   else
     match c with
-    | 'q' | 'e' -> K Quit
+    | 'q' -> K Quit
     | 'h' -> K Help
     | 't' -> K Trunc
     | ':' -> S (read_line ())
