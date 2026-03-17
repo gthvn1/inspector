@@ -16,8 +16,8 @@ let create ~(logfile : string) ~(dbfile : string) : t =
   let db = In_channel.with_open_text dbfile Xapidb.from_channel in
   { lines; cursor = 0; db }
 
-let show_current_line s = s.lines.(s.cursor)
-let show_line n s = if n < 0 || n >= size s then "???" else s.lines.(n)
+let get_current_line s = s.lines.(s.cursor)
+let get_line n s = if n < 0 || n >= size s then "???" else s.lines.(n)
 
 let next s =
   if s.cursor < size s - 1 then { s with cursor = s.cursor + 1 } else s

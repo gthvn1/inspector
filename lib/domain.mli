@@ -8,12 +8,12 @@ val create : logfile:string -> dbfile:string -> t
 (** [create logfile dbfile] loads the log file [logfile] and the database file
     [dbfile] into memory and initializes the cursor at the first line. *)
 
-val show_line : int -> t -> string
-(** [show_line n s] returns the line at index [n] (an `int`). If [n] is outside
+val get_line : int -> t -> string
+(** [get_line n s] returns the line at index [n] (an `int`). If [n] is outside
     the range of logs, question marks are returned. *)
 
-val show_current_line : t -> string
-(** [show_current_line s] returns the line currently pointed to by the cursor.
+val get_current_line : t -> string
+(** [get_current_line s] returns the line currently pointed to by the cursor.
 *)
 
 val next : t -> t

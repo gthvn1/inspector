@@ -51,7 +51,7 @@ let show_logs app =
 
   for i = start to stop do
     let log =
-      D.show_line i app.domain
+      D.get_line i app.domain
       |> (fun l ->
       if Ui.is_truncated app.ui then truncate_log trunc_size l else l)
       |> Inspect.highlight
@@ -125,7 +125,7 @@ let render state =
 
 let rec loop state =
   (* Update the objects found on current line *)
-  let line = D.show_current_line state.domain in
+  let line = D.get_current_line state.domain in
   let db = D.get_db state.domain in
   let refs =
     Inspect.find_opaqueref line
